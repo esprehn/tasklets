@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <script src="worker-service-api.js"></script>
+
+<p id="message"></p>
 <script>
 (async () => {
   let worklet = new Worklet();
@@ -9,4 +11,3 @@
   document.getElementById('message').textContent = response;
 })();
 </script>
-<p id="message"></p>
