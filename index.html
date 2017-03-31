@@ -6,7 +6,7 @@
   await worklet.importScripts('worker.js');
   let speak = await worklet.connect('speak', ["Hello "]);
   let response = await speak.concat('World');
-  console.log(response);
+  document.getElementById('message').textContent = response;
 })();
 </script>
-<p>Hello World</p>
+<p id="message"></p>
