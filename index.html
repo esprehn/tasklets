@@ -1,13 +1,28 @@
 <!DOCTYPE html>
 <script src="worker-service-api.js"></script>
-
-<p id="message"></p>
 <script>
 (async () => {
   let worklet = new Worklet();
+  
+  // Expose a service to the worklet.
+  worklet.register('dom', class {
+    static get exposed() { return ['appendText']; }
+  
+    appendText(text) {
+      let div = document.createElement('div');
+      document.body.appendChild(div).textContent = text;
+    }
+  })
+
+  // Load the code into the worklet.
   await worklet.importScripts('worker.js');
-  let speak = await worklet.connect('speak', ["Hello "]);
+
+  // Create an instance.
+  let speak = await worklet.connect('speak', ['Hello ']);
+
+  // Invoke a method.
   let response = await speak.concat('World');
   document.getElementById('message').textContent = response;
 })();
 </script>
+<p id="message"></p>
