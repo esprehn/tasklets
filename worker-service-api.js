@@ -30,7 +30,7 @@ class ServiceContext {
 
   async connect(name, args) {
     let [instanceId, methodNames] = await this.invoke_(kSystemServiceId,
-        'connect', [name, args]);
+        'connect', [name, args || []]);
     let methods = new Map(methodNames.map((value) => [value, null]));
     return new Proxy({instanceId_: instanceId}, {
       get: (target, property) => {
