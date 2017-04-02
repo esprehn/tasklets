@@ -38,10 +38,10 @@
     }
   });
 
+  // Load the code into the worklet.
+  await worklet.importScripts('worker.js');
+
   (async () => {
-    // Load the code into the worklet.
-    await worklet.importScripts('worker.js');
-  
     // Create an instance.
     let speak = await worklet.connect('speak', ['Hello ']);
   
