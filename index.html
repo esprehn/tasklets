@@ -15,10 +15,12 @@
 <p id="message"></p>
 <script>
 (async () => {
+  // Create a worklet, for now each Worklet is backed by a Worker thread.
   let worklet = new Worklet();
 
   // Expose a service to the worklet.
   worklet.register('dom', class {
+    // We have to list what methods are exposed.
     static get exposed() { return ['appendText', 'appendBox']; }
 
     appendText(text) {
@@ -36,18 +38,25 @@
     }
   });
 
-  // Load the code into the worklet.
-  await worklet.importScripts('worker.js');
+  (async () => {
+    // Load the code into the worklet.
+    await worklet.importScripts('worker.js');
+  
+    // Create an instance.
+    let speak = await worklet.connect('speak', ['Hello ']);
+  
+    // Invoke a method.
+    let response = await speak.concat('World');
 
-  // Create an instance.
-  let speak = await worklet.connect('speak', ['Hello ']);
+    // For now we need to manually disconnect, eventually we might clean up the
+    // instances automatically and auto reconnect when a method is called if the
+    // end point has been cleaned up.
+    worklet.disconnect(speak);
 
-  // Invoke a method.
-  let response = await speak.concat('World');
-  worklet.disconnect(speak);
-  document.getElementById('message').textContent = response;
+    document.getElementById('message').textContent = response;
+  })();
 
-  // Example using a different service.
+  // Example using a different service that will make network requests.
   (async () => {
     let weather = await worklet.connect('weather');
     let result = await weather.query('san francisco, ca');
