@@ -1,20 +1,40 @@
 <!DOCTYPE html>
+<style>
+  body { font-family: sans-serif; }
+  
+  div { margin-top: 8px; }
+
+  .weather {
+    border: 1px solid lightblue;
+    padding: 16px;
+  }
+</style>
+
 <script src="worker-service-api.js"></script>
 
 <p id="message"></p>
 <script>
 (async () => {
   let worklet = new Worklet();
-  
+
   // Expose a service to the worklet.
   worklet.register('dom', class {
-    static get exposed() { return ['appendText']; }
-  
+    static get exposed() { return ['appendText', 'appendBox']; }
+
     appendText(text) {
       let div = document.createElement('div');
       document.body.appendChild(div).textContent = text;
     }
-  })
+
+    appendBox(text, style) {
+      let div = document.createElement('div');
+      if (style) {
+        for (let [property, value] of style)
+          div.style[property] = value;
+      }
+      document.body.appendChild(div).textContent = text;
+    }
+  });
 
   // Load the code into the worklet.
   await worklet.importScripts('worker.js');
@@ -24,6 +44,19 @@
 
   // Invoke a method.
   let response = await speak.concat('World');
+  worklet.disconnect(speak);
   document.getElementById('message').textContent = response;
+
+  // Example using a different service.
+  (async () => {
+    let weather = await worklet.connect('weather');
+    let result = await weather.query('san francisco, ca');
+    worklet.disconnect(weather);
+    let div = document.createElement('div');
+    div.className = 'weather';
+    div.textContent = `It's currently ${result.temp}F and ${result.text} in ` +
+        `San Francisco with wind of ${result.wind}mph.`;
+    document.body.appendChild(div);
+  })();
 })();
 </script>
