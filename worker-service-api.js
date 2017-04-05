@@ -171,6 +171,7 @@ class ServiceContext {
       let result = await method.apply(entry.instance, args);
       this.remote_.postMessage([kResolve, resolverId, instanceId, null, result]);
     } catch (e) {
+      console.error(e);
       this.remote_.postMessage([kReject, resolverId, instanceId, null,
           e.message]);
     }
@@ -188,9 +189,9 @@ class Worklet extends ServiceContext {
 }
 
 // Exposed API.
-if (typeof window == "object")
+if (typeof window == 'object')
   window.Worklet = Worklet;
-else if (typeof self == "object")
+else if (typeof self == 'object')
   self.services = new ServiceContext(self);
 
 })();
