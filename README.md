@@ -8,7 +8,7 @@ iOS and Android native platforms, for example, restrict (by default) the usage o
 
 The web has support for this model via `WebWorkers`, though the `postMessage()` interface is clunky and difficult to use. As a result, worker adoption has been minimal at best and the default model remains to put all work on the main thread. In order to encourage worker adoption, we need to explore a more ergonomic API.
 
-In anticipation of increased `WebWorker` usage, we should also address potential resource overhead concerns that may come from heavier worker usage.
+In anticipation of increased worker usage, this explainer also explores potential solutions to the resource overhead concerns that may come from heavier worker usage.
 
 # Worker API
 __Note__: APIs described below are just strawman proposals. We think they're pretty cool but there's always room for improvement.
@@ -206,12 +206,21 @@ await concat('Hello');
 
 For crazier (and less realistic) ideas around language support for exposing main thread APIs, see [ES support for exposing main thread functions](ES-support-main.md).
 
-# A default worker
-When composing functionality (via iframes or just web components), there is some concern that an abundance of workers may lead to memory bloat. Developers will need some way to share worker resources, even in cases where they do not have direct control of the code they are embedding.
+# Resource overhead of workers
+As more sites/content use workers, we will need some way to mitigate the performance overhead that traditionally comes with workers (~5MB per thread). Developers will need some way to share worker resources, even in cases where they do not have direct control of the code they are embedding (iframes, web components).
 
-iOS and Android both have a concept of a default background thread. This allows easy coordination of resources by default. We propose that any services registered via this API would share a common worker, unless otherwise specified:
+## Worklets
+Worklets are a concept that has been used in various other proposals, such as `AudioWorklet`s or Houdini primitives. We may want to back this API with worklets (which create new context's but can share other resources) to help reduce resource usage. This has the additional benefit that worklets can be moved between threads, allowing the user agent to optimize resource usage based on device constraints.
+
+__Note:__ If worklets are used, we will probably want to replace each usage of "thread" from above with "context", since it's possible all worklets could be running on the same thread in memory constrained situations.
+
+## A default worker
+iOS and Android both have a concept of a default background thread. This allows easy coordination of resources by default. One solution is that any services registered via this API would share a common worker, unless otherwise specified:
 
 ```javascript
 // tasklet.js
 services.register('speak', Speaker, 'custom-worker');
 ```
+
+## Shared workers
+`SharedWorker`s may also fit into the solution here, though they are primarily for sharing workers across pages/iframes, rather than allowing a page to coordinate its own resources.
