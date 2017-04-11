@@ -104,7 +104,9 @@ One way to solve this problem is with the tasklet API in reverse: the main threa
 
 ```javascript
 // main.html
-const tasklet = new Tasklet('tasklet.js');
+const tasklet = new Tasklet();
+
+await tasklet.importScripts('tasklet.js')
 
 tasklet.register('dom', class {
   // We have to list what methods are exposed.
@@ -142,66 +144,36 @@ dom.appendBox(box);
 ```
 
 # ES language support
-While using this API provides numerous improvements, there are still some rough edges. There is a fair amount of boilerplate to register functions. A site's logic is split between multiple files for main and background work. There's no simple way to just run a function in the background.
+While using this API provides numerous improvements, there are still some rough edges. There is a fair amount of boilerplate to register functions. A site's logic is split between multiple files for main and background work. There's no simple way to load code into the background inline.
 
-A `remote` keyword could be used to signify work that should be placed in a tasklet:
-
-## Remote classes
-A remote class would essentially replace all of the boilerplate mentioned above:
-
-```javascript
-// tasklet.js
-remote class Speaker {
-  concat(message) {
-    return `${message} world!`;
-  }
-}
-```
-
-```javascript
-// main.html
-import tasklet.js;
-
-const speaker = new Speaker();
-speaker.concat('Hello');
-```
+A `remote` keyword could be used to signify code that should be placed in a tasklet:
 
 ## Remote blocks
-Alternatively, remote could be used to delineate blocks that should run in a tasklet:
-
-```javascript
-// tasklet.js
-class Speaker {
-  @expose concat(message) {
-    return `${message} world!`;
-  }
-}
-```
+Remote could be used to delineate code that would run in another context and allow the user agent to instantiate it with static knowledge of the module exports:
 
 ```javascript
 // main.html
-const speaker = await remote { import 'tasklet.js'; }
-speaker.concat('Hello');
 
-const expensive = await remote {
-  function doExpensiveBackgroundThing() {
-    // wow so expensive.
-  };
-}
-expensive.doExpensiveBackgroundThing();
-```
+// remote blocks create a handle to a context that can be instatiated
+// with a platform specific API.
+const context = remote {
+  class Speaker {
+    @expose
+    concat(message) {
+      return `${message} world!`;
+    }
+  }
+  export { Speaker };
+};
 
-`remote `
+// tasks is a module object with the tasklet proxies for each exported class in the remote module block.
+const tasks = await Tasklet.import(context);
 
-`remote` could also be used on individual functions:
+// We can synchronously create instances of the proxies which map to objects inside the tasklet.
+const speaker = new tasks.Speaker();
 
-```javascript
-remote function concat(text) {
-  console.log(`${text} world!`);
-}
-
-await concat('Hello');
-}
+// All methods return a promise and structured clone the arguments.
+const result = await speaker.concat('Hello');
 ```
 
 For crazier (and less realistic) ideas around language support for exposing main thread APIs, see [ES support for exposing main thread functions](ES-support-main.md).
